@@ -1,0 +1,81 @@
+generator: manual
+cantera-version: 3.2.0
+date: 2026-08-14
+
+phases:
+- name: liquid
+  thermo: ideal-condensed
+  elements: [C, H, N, O]
+  species: [CH3OH, C6H5NO2, H2, C6H5NH2, H2O]
+  state: {T: 313.15 K, P: 1 atm}
+  kinetics: bulk
+  reactions: all
+
+species:
+- name: CH3OH
+  composition: {C: 1, H: 4, O: 1}
+  thermo:
+    model: constant-cp
+    T0: 298.15 K
+    h0: -239100 J/mol
+    s0: 127 J/mol/K
+    cp0: 81.1 J/mol/K
+  equation-of-state:
+    model: constant-volume
+    molar-volume: 41.5 cm^3/mol
+- name: C6H5NO2
+  composition: {C: 6, H: 5, N: 1, O: 2}
+  thermo:
+    model: constant-cp
+    T0: 298.15 K
+    h0: 12500 J/mol
+    s0: 224 J/mol/K
+    cp0: 179.2 J/mol/K
+  equation-of-state:
+    model: constant-volume
+    molar-volume: 104.9 cm^3/mol
+- name: H2
+  composition: {H: 2}
+  thermo:
+    model: constant-cp
+    T0: 298.15 K
+    h0: 0 J/mol
+    s0: 131 J/mol/K
+    cp0: 28.9 J/mol/K
+  equation-of-state:
+    model: constant-volume
+    molar-volume: 36.6 cm^3/mol
+- name: C6H5NH2
+  composition: {C: 6, H: 7, N: 1}
+  thermo:
+    model: constant-cp
+    T0: 298.15 K
+    h0: 31300 J/mol
+    s0: 191 J/mol/K
+    cp0: 195.5 J/mol/K
+  equation-of-state:
+    model: constant-volume
+    molar-volume: 93.5 cm^3/mol
+- name: H2O
+  composition: {H: 2, O: 1}
+  thermo:
+    model: constant-cp
+    T0: 298.15 K
+    h0: -285830 J/mol
+    s0: 70 J/mol/K
+    cp0: 75.3 J/mol/K
+  equation-of-state:
+    model: constant-volume
+    molar-volume: 18.2 cm^3/mol
+
+reactions:
+# A rescaled from the scipy model's 1.9325 (mol/m3-concentration basis, Cantera's native molar
+# unit is kmol not mol) to 45.925, since this ideal-condensed phase's rate law uses mole fraction
+# (X), not molar concentration, as its activity basis: A_yaml = A_scipy * C_total[kmol/m3]
+# (C_total ~ 23.765 kmol/m3 for this dilute mixture, i.e. gas.density_mole), so that
+# A_yaml*X_MNB[kmol/m3/s] reproduces the same physical rate as A_scipy*C_MNB[mol/m3, mol/m3/s].
+# (First attempt used C_total in mol/m3 instead of kmol/m3 -- 1000x too large -- caught by
+# comparing net_rates_of_progress against the scipy model's expected rate directly.)
+- equation: C6H5NO2 + 3 H2 => C6H5NH2 + 2 H2O
+  rate-constant: {A: 45.925, b: 0.0, Ea: 20604 J/mol}
+  orders: {C6H5NO2: 1.0, H2: 0.0}

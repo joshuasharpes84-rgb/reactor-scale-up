@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reactor Scale-Up Calculator — local test harness</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:    #0F172A;
+    --navy2:   #1E293B;
+    --blue:    #2563EB;
+    --blue-lt: #EFF6FF;
+    --steel:   #334155;
+    --muted:   #64748B;
+    --border:  #E2E8F0;
+    --bg:      #F8FAFC;
+    --white:   #FFFFFF;
+    --radius:  8px;
+    --shadow:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px; line-height: 1.6; color: var(--steel); background: var(--bg);
+  }
+  a { color: var(--blue); text-decoration: none; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px 24px 80px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); margin-bottom: 6px; }
+  .section-title { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+  .section-desc  { font-size: 14px; color: var(--muted); max-width: 620px; margin-bottom: 32px; line-height: 1.65; }
+
+  details { margin-bottom: 18px; }
+  summary {
+    list-style: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; color: var(--navy);
+    padding: 11px 16px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    display: flex; align-items: center; gap: 10px;
+    user-select: none; transition: background .12s, border-color .12s;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::marker { display: none; }
+  summary:hover { background: #eef1f6; border-color: #c8d0dc; }
+  details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom-color: var(--blue); }
+  .sum-arrow { display: inline-block; width: 16px; text-align: center; font-size: 11px; color: var(--muted); transition: transform .18s; flex-shrink: 0; }
+  details[open] > summary .sum-arrow { transform: rotate(90deg); }
+  .sum-title { flex: 1; }
+  .sum-count { font-size: 11px; font-weight: 600; color: var(--muted); background: var(--white); padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border); flex-shrink: 0; }
+  .details-body { padding: 20px 0 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="section-label">Process Engineering Tools</div>
+  <h2 class="section-title">Interactive Calculations</h2>
+  <p class="section-desc">Live calculators built from API standards and first principles. Adjust any slider and results update instantly.</p>
+
+    <!-- ── Reactor Scale-Up Calculator ── -->
+    <details>
+      <summary>
+        <span class="sum-arrow">›</span>
+        <span class="sum-title">Jacketed / Packed-Bed Reactor Scale-Up Calculator</span>
+        <span class="sum-count">lab → pilot</span>
+      </summary>
+      <div class="details-body">
+
+        <style>
+          #rsu-tool .rsu-subtitle { font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.6; }
+          #rsu-tool .rsu-layout { display:grid; grid-template-columns:320px 1fr; gap:16px; align-items:start; }
+          #rsu-tool .rsu-panel { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); margin-bottom:14px; }
+          #rsu-tool .rsu-sh { font-size:10px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; }
+          #rsu-tool .rsu-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+          #rsu-tool .rsu-row:last-child { margin-bottom:0; }
+          #rsu-tool .rsu-lbl { font-size:11.5px; color:var(--muted); flex:1 1 auto; line-height:1.35; }
+          #rsu-tool .rsu-row select { width:190px; flex-shrink:0; font-size:12px; padding:5px 7px; border:1px solid var(--border); border-radius:6px; background:var(--white); color:var(--navy); font-family:inherit; }
+          #rsu-tool .rsu-row select:disabled { color:var(--muted); background:var(--bg); cursor:not-allowed; }
+          #rsu-tool .rsu-slider-wrap { display:flex; flex-direction:column; gap:6px; }
+          #rsu-tool .rsu-slider-val { font-size:12px; font-weight:700; color:var(--navy); font-family:"Courier New",monospace; text-align:right; }
+          #rsu-tool input[type=range]#rsu-lod { width:100%; accent-color:var(--blue); }
+          #rsu-tool .rsu-note { font-size:10.5px; color:var(--muted); margin:-4px 0 9px; line-height:1.5; font-style:italic; }
+          #rsu-tool .rsu-mgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+          #rsu-tool .rsu-m { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:9px 11px; }
+          #rsu-tool .rsu-m-lbl { font-size:10.5px; color:var(--muted); margin-bottom:3px; }
+          #rsu-tool .rsu-m-val { font-size:16px; font-weight:700; color:var(--navy); font-family:"Courier New",monospace; }
+          #rsu-tool .rsu-m-unit { font-size:10.5px; color:var(--muted); margin-left:2px; }
+          #rsu-tool .rsu-m-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+          #rsu-tool .rsu-m.rsu-flag-boiling { border-left:3px solid #DC2626; }
+          #rsu-tool .rsu-m.rsu-flag-semenov { border-left:3px solid #7C3AED; }
+          #rsu-tool .rsu-m.rsu-flag-pressure { border-left:3px solid #D97706; }
+          #rsu-tool .rsu-flag-rec { border-left:4px solid #0D9488; background:#F0FDFA; }
+          #rsu-tool .rsu-rec-headline { display:flex; gap:28px; flex-wrap:wrap; margin-top:2px; }
+          #rsu-tool .rsu-m-val-lg { font-size:27px; }
+          #rsu-tool .rsu-context { margin:-2px 0 14px; }
+          #rsu-tool .rsu-context summary { cursor:pointer; font-weight:700; color:var(--blue); font-size:12px; list-style:none; margin-bottom:2px; }
+          #rsu-tool .rsu-context summary::-webkit-details-marker { display:none; }
+          #rsu-tool .rsu-scheme-wrap { margin-bottom:4px; }
+          #rsu-tool svg.rsu-scheme { display:block; width:100%; height:auto; max-height:150px; }
+          #rsu-tool .rsu-caution { background:#fff8e1; border:1px solid #f9a825; border-radius:var(--radius); padding:10px 14px; font-size:12px; color:#6d4c00; margin-bottom:0; line-height:1.55; }
+          #rsu-tool .rsu-chart-title { font-size:11px; font-weight:700; color:var(--navy); margin:2px 0 6px; }
+          #rsu-tool .rsu-chart-wrap { overflow-x:auto; margin-bottom:14px; }
+          #rsu-tool .rsu-chart-wrap:last-child { margin-bottom:0; }
+          #rsu-tool svg.rsu-chart { display:block; width:100%; min-width:420px; height:190px; }
+          #rsu-tool .rsu-axis { stroke:var(--border); stroke-width:1; }
+          #rsu-tool .rsu-axis-lbl { font-size:9.5px; fill:var(--muted); font-family:inherit; }
+          #rsu-tool .rsu-tick-lbl { font-size:9px; fill:var(--muted); font-family:"Courier New",monospace; }
+          #rsu-tool .rsu-curve { fill:none; stroke-width:2; }
+          #rsu-tool .rsu-curve-T { stroke:#1E293B; }
+          #rsu-tool .rsu-curve-X { stroke:var(--blue); }
+          #rsu-tool .rsu-curve-mdot { stroke:#16A34A; }
+          #rsu-tool .rsu-curve-dP { stroke:#B45309; }
+          #rsu-tool .rsu-limit-line { stroke-dasharray:4 3; stroke-width:1.3; }
+          #rsu-tool .rsu-limit-boiling { stroke:#DC2626; }
+          #rsu-tool .rsu-limit-semenov { stroke:#7C3AED; }
+          #rsu-tool .rsu-limit-pressure { stroke:#D97706; }
+          #rsu-tool .rsu-limit-rec { stroke:#0D9488; }
+          #rsu-tool .rsu-crit-marker { stroke-width:1.3; stroke-dasharray:2 2; }
+          #rsu-tool .rsu-crit-marker.rsu-limit-rec { stroke-width:2.2; stroke-dasharray:0; }
+          #rsu-tool .rsu-legend { font-size:10px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; margin-top:2px; }
+          #rsu-tool .rsu-legend span { display:inline-flex; align-items:center; gap:4px; }
+          #rsu-tool .rsu-legend i { width:12px; height:2px; display:inline-block; }
+          #rsu-tool .rsu-gaps { font-size:11px; color:var(--muted); line-height:1.7; }
+          #rsu-tool .rsu-gaps summary { cursor:pointer; font-weight:700; color:var(--blue); font-size:12px; margin-bottom:6px; }
+          #rsu-tool .rsu-gaps ul { margin:8px 0 0 18px; }
+          #rsu-tool .rsu-ref-table { width:100%; border-collapse:collapse; font-size:11.5px; }
+          #rsu-tool .rsu-ref-table td { padding:4px 0; border-bottom:1px solid var(--border); }
+          #rsu-tool .rsu-ref-table td:first-child { color:var(--muted); }
+          #rsu-tool .rsu-ref-table td:last-child { text-align:right; font-family:"Courier New",monospace; color:var(--navy); font-weight:600; }
+          #rsu-tool .rsu-foot { font-size:11px; color:var(--muted); margin-top:16px; text-align:center; }
+          #rsu-tool .rsu-foot a { color:var(--blue); font-weight:600; }
+          @media (max-width:820px) { #rsu-tool .rsu-layout { grid-template-columns:1fr; } }
+        </style>
+
+        <div id="rsu-tool">
+          <p class="rsu-subtitle">
+            Scales a jacketed or packed-bed PFR exothermic reaction from lab to pilot diameter, holding target
+            conversion and L/D fixed while sweeping tube diameter D. Every reaction has its own binding scale-up
+            constraint — cooling surface/volume, thermal stability, or pressure drop — derived from first
+            principles and verified public literature (see reference panel), not vendor/proprietary numbers.
+            Pick a reaction and L/D; every result and chart recomputes instantly from a precomputed sweep
+            (Python/SciPy, baked in at build time — no live solver in the browser).
+          </p>
+
+          <div class="rsu-panel rsu-scheme-wrap">
+            <div class="rsu-sh">Reaction Scheme</div>
+            <svg id="rsu-scheme-aniline" class="rsu-scheme" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid meet">
+              <g transform="translate(55,62)">
+                <polygon points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" fill="#FFFFFF" stroke="#334155" stroke-width="1.6"/>
+                <circle r="11" fill="none" stroke="#334155" stroke-width="1.1"/>
+                <line x1="0" y1="-20" x2="0" y2="-34" stroke="#334155" stroke-width="1.6"/>
+                <text x="0" y="-40" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">NO&#8322;</text>
+              </g>
+              <text x="95" y="67" font-size="19" fill="#94A3B8" text-anchor="middle">+</text>
+              <g transform="translate(126,62)">
+                <text x="-16" y="4" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">3</text>
+                <circle cx="-3" cy="0" r="6" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+                <circle cx="15" cy="0" r="6" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+                <line x1="3" y1="0" x2="9" y2="0" stroke="#334155" stroke-width="1.3"/>
+                <text x="-3" y="3.5" font-size="8" text-anchor="middle" fill="#334155">H</text>
+                <text x="15" y="3.5" font-size="8" text-anchor="middle" fill="#334155">H</text>
+              </g>
+              <g transform="translate(160,62)">
+                <line x1="0" y1="0" x2="65" y2="0" stroke="#0F172A" stroke-width="1.6"/>
+                <polygon points="65,0 57,-4 57,4" fill="#0F172A"/>
+                <text x="32" y="-9" font-size="9.5" text-anchor="middle" fill="#64748B">Pd cat.</text>
+              </g>
+              <g transform="translate(270,62)">
+                <polygon points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" fill="#FFFFFF" stroke="#334155" stroke-width="1.6"/>
+                <circle r="11" fill="none" stroke="#334155" stroke-width="1.1"/>
+                <line x1="0" y1="-20" x2="0" y2="-34" stroke="#334155" stroke-width="1.6"/>
+                <text x="0" y="-40" text-anchor="middle" font-size="12" font-weight="700" fill="#0F172A">NH&#8322;</text>
+              </g>
+              <text x="310" y="67" font-size="19" fill="#94A3B8" text-anchor="middle">+</text>
+              <g transform="translate(352,60)">
+                <text x="-18" y="6" font-size="12" font-weight="700" fill="#0F172A" text-anchor="middle">2</text>
+                <line x1="0" y1="-2" x2="-13" y2="-12" stroke="#334155" stroke-width="1.3"/>
+                <line x1="0" y1="-2" x2="13" y2="-12" stroke="#334155" stroke-width="1.3"/>
+                <circle cx="0" cy="-2" r="7" fill="#FFFFFF" stroke="#334155" stroke-width="1.3"/>
+                <circle cx="-13" cy="-12" r="4.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.2"/>
+                <circle cx="13" cy="-12" r="4.5" fill="#FFFFFF" stroke="#334155" stroke-width="1.2"/>
+                <text x="0" y="1" font-size="8" text-anchor="middle" fill="#334155">O</text>
+                <text x="-13" y="-9" font-size="7" text-anchor="middle" fill="#334155">H</text>
+                <text x="13" y="-9" font-size="7" text-anchor="middle" fill="#334155">H</text>
+              </g>
+            </svg>
+            <svg id="rsu-scheme-cumene" class="rsu-scheme" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid meet" style="display:none;">
+              <g transform="translate(55,62)">
+                <polygon points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" fill="#FFFFFF" stroke="#334155" stroke-width="1.6"/>
+                <circle r="11" fill="none" stroke="#334155" stroke-width="1.1"/>
+                <text x="0" y="4" text-anchor="middle" font-size="9" fill="#334155">C&#8326;H&#8326;</text>
+              </g>
+              <text x="100" y="67" font-size="19" fill="#94A3B8" text-anchor="middle">+</text>
+              <g transform="translate(140,62)">
+                <line x1="-22" y1="6" x2="-8" y2="-6" stroke="#334155" stroke-width="1.6"/>
+                <line x1="-8" y1="-6" x2="6" y2="6" stroke="#334155" stroke-width="1.6" stroke-dasharray="0"/>
+                <line x1="-6" y1="-4.5" x2="4" y2="4.5" stroke="#334155" stroke-width="1.6"/>
+                <text x="-8" y="-12" text-anchor="middle" font-size="8" fill="#334155">CH&#8322;=CH-CH&#8323;</text>
+              </g>
+              <g transform="translate(200,62)">
+                <line x1="0" y1="0" x2="65" y2="0" stroke="#0F172A" stroke-width="1.6"/>
+                <polygon points="65,0 57,-4 57,4" fill="#0F172A"/>
+                <text x="32" y="-9" font-size="9.5" text-anchor="middle" fill="#64748B">zeolite cat.</text>
+              </g>
+              <g transform="translate(320,62)">
+                <polygon points="0,-20 17.3,-10 17.3,10 0,20 -17.3,10 -17.3,-10" fill="#FFFFFF" stroke="#334155" stroke-width="1.6"/>
+                <circle r="11" fill="none" stroke="#334155" stroke-width="1.1"/>
+                <line x1="0" y1="-20" x2="0" y2="-34" stroke="#334155" stroke-width="1.6"/>
+                <text x="0" y="-40" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">CH(CH&#8323;)&#8322;</text>
+              </g>
+            </svg>
+            <div class="rsu-note" style="margin:6px 0 0;">Simplified skeletal structures — illustrative, not to bond-angle/3D scale.</div>
+          </div>
+
+          <div class="rsu-layout">
+
+            <!-- LEFT: inputs -->
+            <div class="rsu-inputs">
+
+              <div class="rsu-panel">
+                <div class="rsu-sh">Reaction</div>
+                <div class="rsu-row">
+                  <span class="rsu-lbl">Reaction</span>
+                  <select id="rsu-reaction">
+                    <option value="cumene">Cumene — Q-Max Alkylation</option>
+                    <option value="aniline">Aniline — MNB Hydrogenation</option>
+                  </select>
+                </div>
+                <div class="rsu-note" id="rsu-eq">—</div>
+              </div>
+
+              <div class="rsu-panel">
+                <div class="rsu-sh">Geometry</div>
+                <div class="rsu-row rsu-slider-wrap" style="flex-direction:column; align-items:stretch;">
+                  <div style="display:flex; justify-content:space-between;">
+                    <span class="rsu-lbl">Reactor L/D ratio</span>
+                    <span class="rsu-slider-val" id="rsu-lod-val">100</span>
+                  </div>
+                  <input type="range" id="rsu-lod" min="0" max="7" step="1" value="3">
+                </div>
+                <div class="rsu-note" id="rsu-lod-note">Bounded to the L/D range validated against the underlying
+                  reactor model (see gaps below).</div>
+              </div>
+
+              <div class="rsu-panel">
+                <div class="rsu-sh">Fixed, Reaction-Coupled Basis</div>
+                <div class="rsu-note" style="margin:0;">Selecting a reaction locks in its whole validated bundle —
+                  feed composition, coolant, target conversion, feed temperature, and reactor type (empty-tube
+                  jacketed for Aniline; packed-bed for Cumene) — not exposed as separate sliders, matching this
+                  tool's minimal-input design.</div>
+              </div>
+            </div>
+
+            <!-- RIGHT: results -->
+            <div class="rsu-results">
+
+              <div class="rsu-panel rsu-flag-rec">
+                <div class="rsu-sh">Recommended Design Point at L/D = <span id="rsu-result-lod">100</span></div>
+                <div class="rsu-rec-headline">
+                  <div>
+                    <div class="rsu-m-lbl">Recommended tube diameter</div>
+                    <div class="rsu-m-val rsu-m-val-lg" id="rsu-r-d-rec">—</div><div class="rsu-m-unit">mm</div>
+                  </div>
+                  <div>
+                    <div class="rsu-m-lbl">Throughput at that diameter</div>
+                    <div class="rsu-m-val rsu-m-val-lg" id="rsu-r-mdot-rec">—</div><div class="rsu-m-unit" id="rsu-r-mdot-rec-unit">kg/h</div>
+                  </div>
+                </div>
+                <div class="rsu-note" id="rsu-rec-basis" style="margin:8px 0 0;">—</div>
+              </div>
+
+              <details class="rsu-context">
+                <summary id="rsu-context-summary">Why this diameter — the limits behind the recommendation</summary>
+                <div class="rsu-mgrid" id="rsu-limits-grid" style="margin:10px 0 0;"></div>
+                <div class="rsu-caution" id="rsu-caution-box" style="margin-top:10px;"></div>
+              </details>
+
+              <div class="rsu-chart-wrap">
+                <div class="rsu-chart-title">Peak reactor temperature vs. tube diameter</div>
+                <svg class="rsu-chart" id="rsu-chart-T" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+                <div class="rsu-legend" id="rsu-legend-T"></div>
+              </div>
+
+              <div class="rsu-chart-wrap">
+                <div class="rsu-chart-title">Exit conversion vs. tube diameter</div>
+                <svg class="rsu-chart" id="rsu-chart-X" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+                <div class="rsu-legend" id="rsu-legend-X"></div>
+              </div>
+
+              <div class="rsu-chart-wrap">
+                <div class="rsu-chart-title">Throughput vs. tube diameter</div>
+                <svg class="rsu-chart" id="rsu-chart-M" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+                <div class="rsu-legend" id="rsu-legend-M"></div>
+              </div>
+
+              <div class="rsu-chart-wrap" id="rsu-chart-dP-wrap" style="display:none;">
+                <div class="rsu-chart-title">Pressure drop vs. tube diameter</div>
+                <svg class="rsu-chart" id="rsu-chart-dP" viewBox="0 0 640 190" preserveAspectRatio="none"></svg>
+                <div class="rsu-legend" id="rsu-legend-dP"></div>
+              </div>
+
+              <div class="rsu-panel">
+                <div class="rsu-sh">Reference Data — <span id="rsu-ref-title">—</span> (fixed, not user-editable)</div>
+                <table class="rsu-ref-table" id="rsu-ref-table"></table>
+              </div>
+
+              <details class="rsu-gaps">
+                <summary>Known simplifications / gaps</summary>
+                <ul id="rsu-gaps-list"></ul>
+              </details>
+
+              <p class="rsu-foot" id="rsu-footer">—</p>
+            </div>
+
+          </div>
+        </div>
+
+        <script src="aniline_calculator_data.js"></script>
+        <script src="cumene_calculator_data.js"></script>
+        <script>
+        (function () {
+          function $(id) { return document.getElementById(id); }
+
+          var DATASETS = { aniline: ANILINE_DATA, cumene: CUMENE_DATA };
+          var LIMIT_COLOR = { boiling: '#DC2626', semenov: '#7C3AED', pressure: '#D97706' };
+
+          function fmt(v, d) { return (v === null || v === undefined) ? 'n/a' : Number(v).toFixed(d); }
+
+          function lineChart(svgId, xs, seriesList, opts) {
+            var svg = $(svgId);
+            var W = 640, H = 190, padL = 46, padR = 12, padT = 10, padB = 24;
+            var plotW = W - padL - padR, plotH = H - padT - padB;
+
+            var xMin = xs[0], xMax = xs[xs.length - 1];
+            var yMin = opts.yMin, yMax = opts.yMax;
+
+            function xPix(x) { return padL + (x - xMin) / (xMax - xMin) * plotW; }
+            function yPix(y) { return padT + (1 - (y - yMin) / (yMax - yMin)) * plotH; }
+
+            var svgNS = 'http://www.w3.org/2000/svg';
+            while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+            function el(tag, attrs) {
+              var e = document.createElementNS(svgNS, tag);
+              for (var k in attrs) e.setAttribute(k, attrs[k]);
+              return e;
+            }
+
+            svg.appendChild(el('line', { class: 'rsu-axis', x1: padL, y1: padT, x2: padL, y2: H - padB }));
+            svg.appendChild(el('line', { class: 'rsu-axis', x1: padL, y1: H - padB, x2: W - padR, y2: H - padB }));
+
+            for (var i = 0; i <= 4; i++) {
+              var xv = xMin + (xMax - xMin) * i / 4;
+              var xp = xPix(xv);
+              svg.appendChild(el('line', { class: 'rsu-axis', x1: xp, y1: H - padB, x2: xp, y2: H - padB + 4 }));
+              var t = el('text', { class: 'rsu-tick-lbl', x: xp, y: H - padB + 15, 'text-anchor': 'middle' });
+              t.textContent = Math.round(xv);
+              svg.appendChild(t);
+            }
+            var xlab = el('text', { class: 'rsu-axis-lbl', x: padL + plotW / 2, y: H - 2, 'text-anchor': 'middle' });
+            xlab.textContent = 'Tube diameter D (mm)';
+            svg.appendChild(xlab);
+
+            for (var j = 0; j <= 3; j++) {
+              var yv = yMin + (yMax - yMin) * j / 3;
+              var yp = yPix(yv);
+              var ty = el('text', { class: 'rsu-tick-lbl', x: padL - 6, y: yp + 3, 'text-anchor': 'end' });
+              ty.textContent = fmt(yv, opts.yDec === undefined ? 0 : opts.yDec);
+              svg.appendChild(ty);
+            }
+
+            (opts.hLines || []).forEach(function (hl) {
+              if (hl.y === null || hl.y === undefined || hl.y < yMin || hl.y > yMax) return;
+              var yp = yPix(hl.y);
+              svg.appendChild(el('line', { class: 'rsu-limit-line', style: 'stroke:' + hl.color, x1: padL, y1: yp, x2: W - padR, y2: yp }));
+            });
+
+            (opts.vLines || []).forEach(function (vl) {
+              if (vl.x === null || vl.x === undefined || vl.x < xMin || vl.x > xMax) return;
+              var xp = xPix(vl.x);
+              var cls = 'rsu-crit-marker' + (vl.cls ? ' ' + vl.cls : '');
+              svg.appendChild(el('line', { class: cls, style: vl.color ? 'stroke:' + vl.color : '', x1: xp, y1: padT, x2: xp, y2: H - padB }));
+            });
+
+            seriesList.forEach(function (s) {
+              var pts = xs.map(function (x, idx) { return xPix(x) + ',' + yPix(s.ys[idx]); }).join(' ');
+              svg.appendChild(el('polyline', { class: 'rsu-curve ' + s.cls, points: pts }));
+            });
+          }
+
+          function legendHtml(items) {
+            return items.map(function (it) {
+              var swatch = it.dashed
+                ? '<i style="background:' + it.color + '; border-top:2px dashed ' + it.color + '; height:0;"></i>'
+                : '<i style="background:' + it.color + ';"></i>';
+              return '<span>' + swatch + it.label + '</span>';
+            }).join('');
+          }
+
+          function render() {
+            var reaction = $('rsu-reaction').value;
+            var D = DATASETS[reaction];
+            var ref = D.reference;
+
+            $('rsu-scheme-aniline').style.display = (reaction === 'aniline') ? 'block' : 'none';
+            $('rsu-scheme-cumene').style.display = (reaction === 'cumene') ? 'block' : 'none';
+            $('rsu-eq').textContent = D.equation + '  ·  ΔH_rxn = ' + ref.dH_rxn_kJmol + ' kJ/mol (exothermic)';
+            $('rsu-ref-title').textContent = D.reaction_name;
+            $('rsu-r-mdot-rec-unit').textContent = ref.throughputUnit;
+            $('rsu-footer').innerHTML = ref.footer;
+
+            var refHtml = '';
+            ref.tableRows.forEach(function (r) { refHtml += '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; });
+            $('rsu-ref-table').innerHTML = refHtml;
+
+            var gapsHtml = '';
+            ref.gaps.forEach(function (g) { gapsHtml += '<li>' + g + '</li>'; });
+            $('rsu-gaps-list').innerHTML = gapsHtml;
+
+            // Rebuild L/D slider range for this reaction's grid, preserving relative position where possible
+            var slider = $('rsu-lod');
+            var prevFrac = slider.max > 0 ? slider.value / slider.max : 0.5;
+            slider.max = D.LOD_grid.length - 1;
+            var lodIdx = Math.round(prevFrac * (D.LOD_grid.length - 1));
+            slider.value = lodIdx;
+
+            var lod = D.LOD_grid[lodIdx];
+            $('rsu-lod-val').textContent = lod;
+            $('rsu-result-lod').textContent = lod;
+
+            var s = D.series[String(lod)];
+            var xs = D.D_mm;
+
+            function interpAtD(ys, targetD) {
+              if (targetD === null || targetD === undefined) return null;
+              if (targetD <= xs[0]) return ys[0];
+              if (targetD >= xs[xs.length - 1]) return ys[ys.length - 1];
+              for (var i = 1; i < xs.length; i++) {
+                if (xs[i] >= targetD) {
+                  var x0 = xs[i - 1], x1 = xs[i], y0 = ys[i - 1], y1 = ys[i];
+                  var frac = (targetD - x0) / (x1 - x0);
+                  return y0 + frac * (y1 - y0);
+                }
+              }
+              return ys[ys.length - 1];
+            }
+
+            // Build "why this diameter" cards, generically, from s.limits
+            var limitsHtml = '';
+            s.limits.forEach(function (lim) {
+              var color = LIMIT_COLOR[lim.key] || '#64748B';
+              var mdotAt = interpAtD(s.mdot_kgh, lim.D_crit_mm);
+              limitsHtml += '<div class="rsu-m rsu-flag-' + lim.key + '">' +
+                '<div class="rsu-m-lbl">' + lim.label + '</div>' +
+                '<div class="rsu-m-val">' + (mdotAt !== null ? fmt(mdotAt, 1) : 'n/a') + '</div>' +
+                '<div class="rsu-m-unit">' + ref.throughputUnit + '</div>' +
+                '<div class="rsu-m-sub">' + (lim.D_crit_mm !== null
+                  ? ('at D ≈ ' + fmt(lim.D_crit_mm, 1) + ' mm')
+                  : ('not reached up to ' + fmt(xs[xs.length - 1], 0) + 'mm')) + '</div>' +
+                '</div>';
+            });
+            $('rsu-limits-grid').innerHTML = limitsHtml;
+            $('rsu-caution-box').innerHTML = ref.limitsExplanation;
+
+            // Recommended design point: 15% margin below the binding (smallest) limit, generic over s.limits
+            var MARGIN = 0.15;
+            var candidates = s.limits.filter(function (l) { return l.D_crit_mm !== null && l.D_crit_mm !== undefined; });
+            var Drec, recBasisText;
+            if (candidates.length) {
+              candidates = candidates.slice().sort(function (a, b) { return a.D_crit_mm - b.D_crit_mm; });
+              var binding = candidates[0];
+              Drec = binding.D_crit_mm * (1 - MARGIN);
+              recBasisText = 'Set ' + (MARGIN * 100).toFixed(0) + '% below the ' + binding.label +
+                ' (D≈' + fmt(binding.D_crit_mm, 1) + ' mm), the binding (smallest) limit at this L/D — ' +
+                'a conservative design margin, not a further first-principles derivation.';
+            } else {
+              Drec = xs[xs.length - 1];
+              recBasisText = 'No limit reached within the swept range up to ' + fmt(xs[xs.length - 1], 0) +
+                ' mm at this L/D — shown at the top of the swept range; extend the sweep to locate an ' +
+                'actual limit before designing to this point.';
+            }
+            var mdotRec = interpAtD(s.mdot_kgh, Drec);
+            $('rsu-r-d-rec').textContent = fmt(Drec, 1);
+            $('rsu-r-mdot-rec').textContent = fmt(mdotRec, 1);
+            $('rsu-rec-basis').textContent = recBasisText;
+
+            var allVLines = s.limits.map(function (l) {
+              return { x: l.D_crit_mm, color: LIMIT_COLOR[l.key], cls: 'rsu-limit-' + l.key };
+            }).concat([{ x: Drec, color: '#0D9488', cls: 'rsu-limit-rec' }]);
+
+            // T chart: hLines only from thermal-kind limits (need a T_ref_C)
+            var thermalLimits = s.limits.filter(function (l) { return l.kind === 'thermal' && l.T_ref_C !== undefined; });
+            var tRefs = thermalLimits.map(function (l) { return l.T_ref_C; });
+            lineChart('rsu-chart-T', xs, [{ ys: s.peakT_C, cls: 'rsu-curve-T' }], {
+              yMin: Math.min(ref.Tfeed_C, Math.min.apply(null, s.peakT_C)) - 5,
+              yMax: Math.max.apply(null, tRefs.concat([Math.max.apply(null, s.peakT_C)])) + 5,
+              yDec: 0,
+              hLines: thermalLimits.map(function (l) { return { y: l.T_ref_C, color: LIMIT_COLOR[l.key] }; }),
+              vLines: allVLines
+            });
+            $('rsu-legend-T').innerHTML = legendHtml(
+              [{ color: '#1E293B', label: 'peak T', dashed: false }]
+                .concat(thermalLimits.map(function (l) { return { color: LIMIT_COLOR[l.key], label: l.label, dashed: true }; }))
+                .concat([{ color: '#0D9488', label: 'recommended D', dashed: false }])
+            );
+
+            lineChart('rsu-chart-X', xs, [{ ys: s.convX_pct, cls: 'rsu-curve-X' }], {
+              yMin: 0, yMax: 100, yDec: 0, vLines: allVLines
+            });
+            $('rsu-legend-X').innerHTML = legendHtml([
+              { color: getComputedStyle(document.documentElement).getPropertyValue('--blue') || '#2563EB', label: 'exit conversion', dashed: false },
+              { color: '#0D9488', label: 'recommended D', dashed: false }
+            ]);
+
+            lineChart('rsu-chart-M', xs, [{ ys: s.mdot_kgh, cls: 'rsu-curve-mdot' }], {
+              yMin: 0, yMax: Math.max.apply(null, s.mdot_kgh) * 1.08, yDec: 1, vLines: allVLines
+            });
+            $('rsu-legend-M').innerHTML = legendHtml([
+              { color: '#16A34A', label: 'fresh-feed throughput', dashed: false },
+              { color: '#0D9488', label: 'recommended D', dashed: false }
+            ]);
+
+            // Pressure-drop chart: only shown if this reaction's data includes dP_kPa
+            if (s.dP_kPa) {
+              $('rsu-chart-dP-wrap').style.display = 'block';
+              var pressureLimits = s.limits.filter(function (l) { return l.kind === 'pressure'; });
+              lineChart('rsu-chart-dP', xs, [{ ys: s.dP_kPa, cls: 'rsu-curve-dP' }], {
+                yMin: 0,
+                yMax: Math.max.apply(null, s.dP_kPa.concat([ref.dP_allowable_kPa || 0])) * 1.08,
+                yDec: 0,
+                hLines: ref.dP_allowable_kPa !== undefined ? [{ y: ref.dP_allowable_kPa, color: LIMIT_COLOR.pressure }] : [],
+                vLines: allVLines
+              });
+              $('rsu-legend-dP').innerHTML = legendHtml([
+                { color: '#B45309', label: 'pressure drop', dashed: false },
+                { color: LIMIT_COLOR.pressure, label: 'allowable ΔP ceiling', dashed: true },
+                { color: '#0D9488', label: 'recommended D', dashed: false }
+              ]);
+            } else {
+              $('rsu-chart-dP-wrap').style.display = 'none';
+            }
+          }
+
+          $('rsu-lod').addEventListener('input', render);
+          $('rsu-lod').addEventListener('change', render);
+          $('rsu-reaction').addEventListener('change', render);
+
+          render();
+        })();
+        </script>
+      </div>
+    </details>
+
+</div>
+</body>
+</html>
