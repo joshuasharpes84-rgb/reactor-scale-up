@@ -4,6 +4,11 @@ How large can a tubular reactor running an exothermic reaction get before it sto
 Pick a reaction and an L/D ratio. The tool finds the tube diameter at which each physical limit binds, then
 recommends a design point (diameter and throughput) 15 % below the first limit reached.
 
+> **Make it yours, free:** download this repo (**Code → Download ZIP**, or `git clone`), open the folder in
+> VS Code or any editor, and extend it for your own case with your AI assistant. This README is written for
+> both of you. Taking these tools further is a free service of
+> [Sharpes Process Engineering](https://jsharpes-portfolio.netlify.app); the site's Ask box can point you to the right starting file.
+
 **The main finding:** different reactions hit different limits.
 
 - **Aniline (empty jacketed tube)** is limited by heat removal. Heat generation scales with volume (∝ D²L)

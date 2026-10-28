@@ -83,6 +83,73 @@
             (Python/SciPy, baked in at build time — no live solver in the browser).
           </p>
 
+          <!-- Sources panel (portfolio rule 2026-10-27): kept in step with Reactor Scale Up\SOURCES.md; thumbnails = assets/source-thumbs/ from Not on Website/source_thumbs/build_source_thumbs.py -->
+          <div id="rsu-srcwrap">
+          <style>
+          #rsu-srcwrap{margin:0 0 16px}
+          #rsu-srcwrap details.srcs{--sp-bg:var(--white);--sp-bg2:var(--bg);--sp-line:var(--border);--sp-muted:var(--muted);--sp-ink:var(--navy);--sp-acc:var(--blue);display:block;margin:0;padding:0;border:1px solid var(--sp-line);border-radius:8px;background:var(--sp-bg);box-shadow:none;text-align:left}
+          #rsu-srcwrap details.srcs>summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;padding:8px 12px;background:none;border:0;border-radius:8px;box-shadow:none;position:static;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sp-muted);user-select:none}
+          #rsu-srcwrap details.srcs>summary::-webkit-details-marker{display:none}
+          #rsu-srcwrap details.srcs>summary::marker{content:""}
+          #rsu-srcwrap details.srcs>summary::before{content:"\25B8";color:var(--sp-acc);width:12px}
+          #rsu-srcwrap details.srcs[open]>summary::before{content:"\25BE"}
+          #rsu-srcwrap details.srcs>summary:hover{background:none;color:var(--sp-acc)}
+          #rsu-srcwrap details.srcs .srcnote{margin:0;padding:0 12px 8px;font-size:12px;line-height:1.45;color:var(--sp-muted);font-style:normal}
+          #rsu-srcwrap details.srcs .srcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:0;padding:0 12px 12px}
+          #rsu-srcwrap details.srcs .src{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start;margin:0;padding:8px;background:var(--sp-bg);border:1px solid var(--sp-line);border-radius:6px;color:var(--sp-ink);text-decoration:none;box-shadow:none;transform:none}
+          #rsu-srcwrap details.srcs a.src:hover{border-color:var(--sp-acc)}
+          #rsu-srcwrap details.srcs .src img,#rsu-srcwrap details.srcs .src .ico{display:block;width:52px;height:68px;margin:0;padding:0;object-fit:cover;object-position:top;border:1px solid var(--sp-line);border-radius:3px;background:var(--sp-bg2)}
+          #rsu-srcwrap details.srcs .src img.wide,#rsu-srcwrap details.srcs .src .ico.wide{height:30px}
+          #rsu-srcwrap details.srcs .src .ico{display:grid;place-items:center;font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--sp-muted)}
+          #rsu-srcwrap details.srcs .src b{display:block;margin:0;font-size:13px;line-height:1.25;font-weight:600;color:var(--sp-ink)}
+          #rsu-srcwrap details.srcs .src .w{display:block;margin:2px 0 0;font-size:11.5px;line-height:1.35;color:var(--sp-muted)}
+          #rsu-srcwrap details.srcs .src .k{display:block;margin:0 0 2px;font-style:normal;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--sp-acc)}
+          #rsu-srcwrap details.srcs .src .k.off{color:var(--sp-muted)}
+          @media (max-width:560px){#rsu-srcwrap details.srcs .srcgrid{grid-template-columns:minmax(0,1fr)}}
+          </style>
+          <details class="srcs">
+            <summary>Sources behind this tool <span id="rsu-srccount"></span></summary>
+            <p class="srcnote">Decks and tools open on this site in a new tab. Books, papers and methods are cited, not linked. Detail by topic: SOURCES.md in the Method &amp; code repo.</p>
+            <div class="srcgrid" id="rsu-srcgrid"></div>
+          </details>
+          <script>
+          (function () {
+            var TH = window.SRC_THUMB_BASE || 'assets/source-thumbs/';
+            var SOURCES = [
+              ["meyers", "book", "Meyers, Handbook of Petrochemical Production Processes", "Reaction shortlist; DuPont/KBR aniline and UOP Q-Max cumene process descriptions", null],
+              [null, "data", "NIST Chemistry WebBook", "Heats of formation for ΔH<sub>rxn</sub> by Hess's law (aniline −552.9, cumene −110.6 kJ/mol)", null],
+              [null, "paper", "Prekob et al., Nanomaterials 11(5):1172 (2021)", "Aniline kinetics: first order in nitrobenzene, Pd catalyst, E<sub>a</sub> 20–23 kJ/mol (open access)", null],
+              ["benhamida", "paper", "Ben Hamida, Preprints.org (2026)", "Cumene kinetics (E<sub>a</sub> 52.6 kJ/mol; DIPB 55.0) and Q-Max operating conditions", null],
+              ["davis", "book", "Davis &amp; Davis, Fundamentals of Chemical Reaction Engineering", "Semenov / Frank-Kamenetskii runaway criterion (Ch. 9); Ercan et al. check on the cumene rate law", null],
+              ["incropera", "book", "Incropera et al., Fundamentals of Heat and Mass Transfer", "Laminar tube heat transfer, Nu = 3.66", null],
+              [null, "method", "Leva packed-bed wall heat transfer", "Nu<sub>w</sub> = 2.03·Re<sub>p</sub><sup>0.8</sup>·exp(−6d<sub>p</sub>/D), valid Re<sub>p</sub> &gt; ~20", null],
+              [null, "method", "Ergun equation", "Packed-bed pressure drop", null],
+              [null, "method", "thermo (Python library)", "Density, c<sub>p</sub>, viscosity and conductivity", null],
+              [null, "method", "Cantera", "Independent reactor-network cross-check with the same kinetics and formation enthalpies", null]
+            ];
+            var grid = document.getElementById('rsu-srcgrid');
+            if (!grid) return;
+            document.getElementById('rsu-srccount').textContent = '\u00b7 ' + SOURCES.length;
+            grid.innerHTML = SOURCES.map(function (s) {
+              var kind = s[1], wide = kind === 'deck' ? ' wide' : '';
+              var linkable = kind === 'deck' || kind === 'tool', url = linkable ? s[4] : null, off = linkable && !url;
+              var img = s[0] ? '<img src="' + TH + s[0] + '.jpg" alt="" loading="lazy" class="' + wide.trim() + '" data-kind="' + kind + '">'
+                             : '<span class="ico' + wide + '">' + kind.toUpperCase() + '</span>';
+              var inner = img + '<div><i class="k' + (off ? ' off' : '') + '">' + kind + (off ? ' \u00b7 not on the site yet' : '') + '</i><b>' +
+                          s[2] + (url ? ' \u2197' : '') + '</b><span class="w">' + s[3] + '</span></div>';
+              return url ? '<a class="src" href="' + url + '" target="_blank" rel="noopener">' + inner + '</a>' : '<div class="src">' + inner + '</div>';
+            }).join('');
+            Array.prototype.forEach.call(grid.querySelectorAll('img'), function (im) {
+              im.addEventListener('error', function () {
+                var sp = document.createElement('span'), k = im.getAttribute('data-kind');
+                sp.className = 'ico' + (k === 'deck' ? ' wide' : ''); sp.textContent = k.toUpperCase();
+                im.parentNode.replaceChild(sp, im);
+              });
+            });
+          })();
+          </script>
+          </div>
+
           <div class="rsu-panel rsu-scheme-wrap">
             <div class="rsu-sh">Reaction Scheme</div>
             <svg id="rsu-scheme-aniline" class="rsu-scheme" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid meet">
